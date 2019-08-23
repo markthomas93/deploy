@@ -1,0 +1,103 @@
+FROM jupyter/base-notebook
+# create app directories
+
+ARG IPYWIDGETS_VER=7.5.1
+ARG GECKO_VER=v0.23.0
+ARG SELENIUM_VER=3.141.0
+ARG RISE_VER=5.5.1
+ARG NBEXTENSIONS_VER=0.5.1
+ARG NBCONFIG_VER=0.4.1
+
+
+
+USER root
+
+# Install ipywidgets (https://github.com/jupyter-widgets/ipywidgets).
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends \
+             libjpeg-dev \
+             libgif-dev \
+             libcairo2-dev \
+             pkg-config \
+             gnupg2 \
+             curl \
+  && pip install ipywidgets==${IPYWIDGETS_VER} \
+  && apt-get autoremove -y \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
+
+
+#Using Selenium to automate a firefox or chrome browser needs geckodriver in place
+RUN wget https://github.com/mozilla/geckodriver/releases/download/${GECKO_VER}/geckodriver-${GECKO_VER}-linux64.tar.gz
+RUN tar -x geckodriver -zf geckodriver-${GECKO_VER}-linux64.tar.gz -O > /usr/bin/geckodriver
+RUN chmod +x /usr/bin/geckodriver
+RUN rm geckodriver-${GECKO_VER}-linux64.tar.gz
+
+
+#Install packages required to allow us to use eg firefox in a headless way
+#https://www.kaggle.com/dierickx3/kaggle-web-scraping-via-headless-firefox-selenium
+RUN apt-get update \
+    && apt-get install -y libgtk-3-0 libdbus-glib-1-2 xvfb \
+    && apt-get install -y firefox \
+    && apt-get clean
+
+# set display port to avoid crash
+ENV DISPLAY=:99
+
+# Install the latest versions of Google Chrome and Chromedriver:
+RUN export DEBIAN_FRONTEND=noninteractive \
+  && apt-get update \
+  && apt-get install \
+    unzip \
+  && \
+  DL=https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+  && curl -sL "$DL" > /tmp/chrome.deb \
+  && apt install --no-install-recommends --no-install-suggests -y \
+    /tmp/chrome.deb \
+  && CHROMIUM_FLAGS='--no-sandbox --disable-dev-shm-usage' \
+  # Patch Chrome launch script and append CHROMIUM_FLAGS to the last line:
+  && sed -i '${s/$/'" $CHROMIUM_FLAGS"'/}' /opt/google/chrome/google-chrome \
+  && BASE_URL=https://chromedriver.storage.googleapis.com \
+  && VERSION=$(curl -sL "$BASE_URL/LATEST_RELEASE") \
+  && curl -sL "$BASE_URL/$VERSION/chromedriver_linux64.zip" -o /tmp/driver.zip \
+  && unzip /tmp/driver.zip \
+  && chmod 755 chromedriver \
+  && mv chromedriver /usr/local/bin/ \
+  # Remove obsolete files:
+  && apt-get autoremove --purge -y \
+    unzip \
+  && apt-get clean \
+  && rm -rf \
+    /tmp/* \
+    /usr/share/doc/* \
+    /var/cache/* \
+    /var/lib/apt/lists/* \
+    /var/tmp/*
+
+
+# install google chrome
+# RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+# RUN sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+# RUN apt-get -y update
+# RUN apt-get install -y google-chrome-stable
+# 
+# # install chromedriver
+# RUN apt-get install -yqq unzip
+# RUN wget -O /tmp/chromedriver.zip http://chromedriver.storage.googleapis.com/`curl -sS chromedriver.storage.googleapis.com/LATEST_RELEASE`/chromedriver_linux64.zip
+# RUN unzip /tmp/chromedriver.zip chromedriver -d /usr/bin/ \
+#   && chmod 755 /usr/bin/chromedriver
+
+
+#Install Selenium python package
+RUN pip install --no-cache selenium==${SELENIUM_VER}
+
+##Edgecase: Local installs have a small issue where Jupyter did not add in the following:
+RUN pip install --no-cache rise==${RISE_VER}
+RUN conda install -c conda-forge jupyter_nbextensions_configurator && \
+    conda install -c conda-forge jupyter_contrib_nbextensions
+
+#And make sure they are owned by the notebook user...
+RUN chown -R ${NB_USER} ${HOME}
+ 
+#Reset the container user back to the notebook user
+USER ${NB_UID}

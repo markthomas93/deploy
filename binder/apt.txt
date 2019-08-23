@@ -1,0 +1,7 @@
+libjpeg-dev
+libgif-dev
+libcairo2-dev
+pkg-config
+gnupg2
+curl
+unzip
