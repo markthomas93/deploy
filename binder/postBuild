@@ -1,60 +1,19 @@
-#!/bin/bash
-
-IPYWIDGETS_VER=7.5.1
-GECKO_VER=v0.23.0
-SELENIUM_VER=3.141.0
-RISE_VER=5.5.1
-NBEXTENSIONS_VER=0.5.1
-NBCONFIG_VER=0.4.1
-
-
-# Install and enable Jupyter nbextensions
-# https://github.com/binder-examples/jupyter-extension
-# https://jupyter-contrib-nbextensions.readthedocs.io/en/latest/install.html
-echo postBuild: Installing Jupyter extensions...
-## confirm that notebook extenstions are installed for mybinder use:
-conda install -c conda-forge jupyter_nbextensions_configurator && \
-conda install -c conda-forge jupyter_contrib_nbextensions
-jupyter nbextension enable freeze/main
-
-# Trust notebooks such that users can see their HTML and JS output
-echo postBuild: Trusting notebooks ...
-jupyter trust \
-	"${HOME}"/notebooks/*.ipynb \
-	"${HOME}"/*.ipynb
-
-# Create custom.css
-echo postBuild: Creating custom.css...
-CUSTOM_PATH="${HOME}"/.jupyter/custom
-mkdir -p "${CUSTOM_PATH}"
-
 # needed for mybinder.org post docker build
+cd "${HOME}" && rm -rf "${HOME}"/work
 
 ## folder strucutre needed for jupyter startups scripts
 mkdir -p "${HOME}"/.ipython/profile_default/startup/
-cp "${HOME}"/binder/*.py "${HOME}"/.ipython/profile_default/startup/
+cp "${HOME}"/config/*.ipy "${HOME}"/.ipython/profile_default/startup/
 
+## move all config and setup files not needed for presentations
 
+mv "${HOME}"/binder "${HOME}"/config
 
-export DEBIAN_FRONTEND=noninteractive
-DL=https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-curl -sL "$DL" > /tmp/chrome.deb && apt install --no-install-recommends --no-install-suggests -y /tmp/chrome.deb \
-  && CHROMIUM_FLAGS='--no-sandbox --disable-dev-shm-usage' \
-  # Patch Chrome launch script and append CHROMIUM_FLAGS to the last line:
-  && sed -i '${s/$/'" $CHROMIUM_FLAGS"'/}' /opt/google/chrome/google-chrome \
-  && BASE_URL=https://chromedriver.storage.googleapis.com \
-  && VERSION=$(curl -sL "$BASE_URL/LATEST_RELEASE") \
-  && curl -sL "$BASE_URL/$VERSION/chromedriver_linux64.zip" -o /tmp/driver.zip \
-  && unzip /tmp/driver.zip \
-  && chmod 755 chromedriver \
-  && mv chromedriver /usr/local/bin/ \
-  # Remove obsolete files:
-  && apt-get autoremove --purge -y \
-    unzip \
-  && apt-get clean \
-  && rm -rf \
-    /tmp/* \
-    /usr/share/doc/* \
-    /var/cache/* \
-    /var/lib/apt/lists/* \
+mv "${HOME}"/Dockerfile "${HOME}"/readme.md "${HOME}"/config
 
+cd "${HOME}" && rm -rf "${HOME}"/binder
+
+# confirm that notebook extenstions are installed for mybinder use:
+conda install -c conda-forge jupyter_nbextensions_configurator
+conda install -c conda-forge jupyter_contrib_nbextensions
+jupyter nbextension enable freeze/main
