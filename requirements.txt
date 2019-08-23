@@ -1,0 +1,5 @@
+rise==5.5.1
+ipywidgets==7.5.1
+selenium==3.141.0
+jupyter-contrib-nbextensions==0.5.1
+jupyter-nbextensions-configurator==0.4.1

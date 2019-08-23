@@ -1,0 +1,15 @@
+.gitignore
+.git
+.conda/
+.cache/
+.ipython/
+.jupyter/
+.local/
+.pki/
+.ipynb_checkpoints/
+.gitignore.swp
+.bash_history
+.ipynb_checkpoints/*
+Dockerfile
+.DS_Store
+readme.md
