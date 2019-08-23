@@ -7,11 +7,11 @@ cp "${HOME}"/config/*.ipy "${HOME}"/.ipython/profile_default/startup/
 
 ## move all config and setup files not needed for presentations
 
-mv "${HOME}"/binder "${HOME}"/config
+# mv "${HOME}"/binder "${HOME}"/config
 
-mv "${HOME}"/Dockerfile "${HOME}"/readme.md "${HOME}"/config
+# mv "${HOME}"/Dockerfile "${HOME}"/readme.md "${HOME}"/config
 
-cd "${HOME}" && rm -rf "${HOME}"/binder
+# cd "${HOME}" && rm -rf "${HOME}"/binder
 
 # confirm that notebook extenstions are installed for mybinder use:
 conda install -c conda-forge jupyter_nbextensions_configurator
